@@ -66,6 +66,9 @@ class Recipe:
         self.multiplier = -1
         self.base_eut = eut # Used for final graph output
         for key, value in kwargs.items():
+            # makes other values case-insensitive like "coils"
+            if type(value) is str:
+                value = value.lower()
             setattr(self, key, value)
 
     def __repr__(self):
