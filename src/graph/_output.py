@@ -86,7 +86,8 @@ def outputGraphviz(self):
                         ing_name = self.getIngLabel(cell)
                         label = self.stripBrackets(ing_name)
                         if quants:
-                            label = f'{label} x{quants[i]}'
+                            quant = self.userRound(quants[i])
+                            label = f'{label} x{quant}'
                         io.write(f'<td border="1" PORT="{port_id}">{label}</td>')
                     else:
                         io.write(f'<td border="0">{cell}</td>')
@@ -109,7 +110,8 @@ def outputGraphviz(self):
                         ing_name = self.getIngLabel(cell)
                         label = self.stripBrackets(ing_name)
                         if quants:
-                            label = f'{label} x{quants[i]}'
+                            quant = self.userRound(quants[i])
+                            label = f'{label} x{quant}'
                         io.write(f'<td border="1" PORT="{port_id}">{label}</td>')
                     else:
                         io.write(f'<td border="0">{cell}</td>')
