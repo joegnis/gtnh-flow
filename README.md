@@ -1,5 +1,15 @@
 # gtnh-flow
 
+## Major changes from OrderedSet86's version
+
+- Colors each machine node
+- Shows which input is recyclable in summary
+- Shows amounts of recipe ingredients in machine node
+- Adds a 'circuit' field in recipes
+
+Incentive: I want to use this tool also as a build guide, i.e. know how to build the line
+at a glance on the output image, instead of referring back to NEI frequently.
+
 ## What is it?
 
 A tool designed for complex GT packs. In specific, aims to achieve:
