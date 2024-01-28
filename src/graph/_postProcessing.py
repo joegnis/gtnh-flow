@@ -1,5 +1,6 @@
 import logging
 import math
+import re
 from collections import defaultdict
 from copy import deepcopy
 from string import ascii_uppercase
@@ -103,7 +104,8 @@ def addUserNodeColor(self):
     all_user_nodes = set(targeted_nodes) | set(numbered_nodes)
 
     for rec_id in all_user_nodes:
-        self.nodes[rec_id].update({'fillcolor': self.graph_config['LOCKEDNODE_COLOR']})
+        # Emphasizes the first line (i.e. machine name line)
+        self.nodes[rec_id]['label'] = re.sub(r'^([^\n]+)', r'<b><u>\1</u></b>', self.nodes[rec_id]['label'])
 
 
 

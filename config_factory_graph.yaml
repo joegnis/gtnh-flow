@@ -49,6 +49,22 @@ LOCKEDNODE_COLOR: 'green'
 POSITIVE_COLOR: '#859900'
 NEGATIVE_COLOR: '#dc322f'
 RECYCLABLE_COLOR: '#2aa198'
+MACHINE_COLORS:
+  electric blast furnace: lightgreen
+  volcanus: lightgreen
+  chemical reactor: dimgrey
+  large chemical reactor: dimgrey
+  distillery: lightblue1
+  distillation tower: lightblue1
+  dangote: lightblue1
+  centrifuge: goldenrod2
+  industrial centrifuge: goldenrod2
+  electrolyzer: lightsalmon2
+  industrial electrolyzer: lightsalmon2
+  autoclave: slateblue3
+  neutron activator: lightsteelblue1
+  vacuum freezer: royalblue1
+  cryogenic freezer: royalblue1
 
 ORIENTATION: 'TB'
 # TB: Vertical, LR: Horizontal, BT: Vertical Inverted, RL: Horizontal Inverted
