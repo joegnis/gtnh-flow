@@ -23,7 +23,7 @@ It achieves this by automatically doing machine balancing math for you. You defi
 
 ## Samples
 
-![Light Fuel w/inefficient hydrogen source](samples/inefficient_light_fuel.png)
+![Light Fuel w/inefficient hydrogen source](samples/light_fuel.jpg)
 ![Platline](samples/228_platline.png)
 
 ## Installation
