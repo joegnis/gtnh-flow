@@ -49,6 +49,7 @@ LOCKEDNODE_COLOR: 'green'
 POSITIVE_COLOR: '#859900'
 NEGATIVE_COLOR: '#dc322f'
 RECYCLABLE_COLOR: '#2aa198'
+# Find color codes at: https://graphviz.org/doc/info/colors.html
 MACHINE_COLORS:
   electric blast furnace: lightgreen
   volcanus: lightgreen
@@ -65,6 +66,14 @@ MACHINE_COLORS:
   neutron activator: lightsteelblue1
   vacuum freezer: royalblue1
   cryogenic freezer: royalblue1
+  ore washing plant: teal
+  macerator: peru
+  maceration stack: peru
+  industrial dehydrator: tomato3
+  dehydrator: tomato3
+  alloy blast smelter: wheat3
+  industrial sledgehammer: seagreen4
+  forge hammer: seagreen4
 
 ORIENTATION: 'TB'
 # TB: Vertical, LR: Horizontal, BT: Vertical Inverted, RL: Horizontal Inverted
