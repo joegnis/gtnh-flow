@@ -2,6 +2,10 @@ output/
 .idea/
 
 .vscode/
+classes/
+projects/2.5/
+.pdm-python
+.python-version
 
 # === STANDARD PYTHON IGNORES ===
 # from https://github.com/github/gitignore/blob/main/Python.gitignore
