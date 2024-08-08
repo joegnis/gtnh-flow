@@ -16,7 +16,6 @@ class OverclockCalculator:
     # - GT5-Unofficial version: 5.09.45.168
     # - GT5-Unofficial commit: 9ec067dc13f9ef7aff30fcc0ee3244f22bd76dd7
     # - GTNH version: 2.6.1
-
     # Refer to Java code for documentation.
     # Only code changed from source is documented.
 
@@ -32,7 +31,8 @@ class OverclockCalculator:
     # who modify more than one member variables,
     # I assign init-only variables to them and process these in `__post_init__`.
 
-    # I feel attempted to make calculate() not change inner states,
+    # joegnis:
+    # I feel tempted to make calculate() not change inner states,
     # but I think it is better to follow Java code closely
     # (so that future updates would be easier).
 
@@ -109,7 +109,7 @@ class OverclockCalculator:
         # Mirrors Java implementation of:
         # - calculate()
         # - calculateOverclock()
-        self.duration = int(math.ceil(self.duration * self.speed_boost))
+        self.duration = math.ceil(self.duration * self.speed_boost)
 
         if self.does_not_overclock:
             self.recipe_voltage = self._final_recipe_eut(
