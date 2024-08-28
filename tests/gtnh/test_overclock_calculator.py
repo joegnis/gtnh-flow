@@ -3,7 +3,7 @@ import math
 import pytest
 
 from src.gtnh.overclock_calculator import OverclockCalculator
-from src.gtnh.values import VP, V
+from src.gtnh.values import Voltage
 
 
 @pytest.mark.parametrize(
@@ -15,43 +15,43 @@ from src.gtnh.values import VP, V
     [
         # perfect OC: at recipe heat requirement + 1800 * 4
         (
-            VP[1],
+            Voltage.LV.practical(),
             1024,
             1800,
-            V[5],
+            Voltage.IV,
             1800 * 5,
             1024 >> 8,
-            math.ceil(VP[5] * math.pow(0.95, (1800 * 4) / 900)),
+            math.ceil(Voltage.IV.practical() * math.pow(0.95, (1800 * 4) / 900)),
         ),
         # imperfect OC: at recipe heat requirement + 900
         (
-            VP[1],
+            Voltage.LV.practical(),
             1024,
             1800,
-            V[5],
+            Voltage.IV,
             2700,
             1024 >> 4,
-            math.ceil(VP[5] * math.pow(0.95, 1)),
+            math.ceil(Voltage.IV.practical() * math.pow(0.95, 1)),
         ),
         # imperfect OC: only at recipe heat requirement
         (
-            VP[1],
+            Voltage.LV.practical(),
             1024,
             1800,
-            V[5],
+            Voltage.IV,
             1800,
             1024 >> 4,
-            math.ceil(VP[5] * math.pow(0.95, 0)),
+            math.ceil(Voltage.IV.practical() * math.pow(0.95, 0)),
         ),
         # perfect OC: at recipe heat requirement + 1800
         (
-            VP[1],
+            Voltage.LV.practical(),
             1024,
             1800,
-            V[5],
+            Voltage.IV,
             3600,
             1024 >> 5,
-            math.ceil(VP[5] * math.pow(0.95, 2)),
+            math.ceil(Voltage.IV.practical() * math.pow(0.95, 2)),
         ),
     ],
 )
@@ -73,6 +73,8 @@ def test_calculate_EBF(
         recipe_heat=recipe_heat,
         machine_heat=machine_heat,
     )
+    calculator.validate()
+    res = calculator.calculate()
 
-    assert calculator.duration == expected_dur
-    assert calculator.recipe_voltage == expected_eut
+    assert res.duration == expected_dur
+    assert res.recipe_voltage == expected_eut

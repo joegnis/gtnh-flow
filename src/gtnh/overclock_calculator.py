@@ -2,7 +2,14 @@ import math
 from dataclasses import KW_ONLY, InitVar, dataclass, field
 from typing import ClassVar
 
-from src.gtnh import values
+from . import values
+
+
+@dataclass
+class OverclockCalculatorResult:
+    duration: int
+    recipe_voltage: int
+    overclock_count: int
 
 
 @dataclass(eq=False)
@@ -11,30 +18,31 @@ class OverclockCalculator:
     Calculates overclocking of a recipe.
     """
 
-    # It tries to mirror the corresponding class in Java source code line by line.
+    # Mirror the following class in Java source code:
     # - Source: gregtech/api/util/GT_OverclockCalculator.java
+    # - GTNH version: 2.6.1
     # - GT5-Unofficial version: 5.09.45.168
     # - GT5-Unofficial commit: 9ec067dc13f9ef7aff30fcc0ee3244f22bd76dd7
-    # - GTNH version: 2.6.1
-    # Refer to Java code for documentation.
     # Only code changed from source is documented.
+    # Refer to Java code for more documentation.
 
-    # As calculate() modifies many member variables along the way,
-    # it only makes sense to run the calculation once,
-    # so I design it to run the calculation right after instantiation.
+    # joegnis:
+    # I am trying not to store calculate() results by setting member variables
+    # as Java code does.
+    # Instead, results are returned, and
+    # no inner states would be changed during the process.
+    # The major benefit is that code would be easier to read.
+    # Returning a result makes it clear what it is doing.
+    #
     # In Java code, multiple setter methods are called after instantiation,
     # and then calculate() is called.
     # These setter methods only set one variable,
-    # so I take the easy way to make them "public" and
-    # let `@dataclass` decorator auto generate __init__ method for them.
+    # so I simplify it by making those variables "public" and
+    # use `@dataclass` decorator to auto generate an __init__ method.
     # For other setter variants, like `limitOverclockCount()`,
-    # who modify more than one member variables,
-    # I assign init-only variables to them and process these in `__post_init__`.
-
-    # joegnis:
-    # I feel tempted to make calculate() not change inner states,
-    # but I think it is better to follow Java code closely
-    # (so that future updates would be easier).
+    # that modify more than one member variables,
+    # I assign one init-only variable to each of them, and
+    # do the init process in `__post_init__`.
 
     # Private Java methods are prefixed with an underscore in Python.
     # Most of Java methods "calculateX" are shortened to "X" in Python.
@@ -72,27 +80,36 @@ class OverclockCalculator:
     heat_discount_multi: float = 0.95
 
     # Init-only variables
-    # Replaces `enablePerfectOC()` in Java
+    # Complements `enable_perfect_oc()`
     enables_perfect_oc: InitVar[bool] = False
-    # Replaces `limitOverclockCount()` in Java
+    # Complements `limit_overclock_counts()`
     max_oc_count: InitVar[int] = -1
+    # Removed from members (see calculate())
+    # _overclock_count
+    # Removed from members (see calculate())
+    # _heat_overclock_count
 
     # Private variables
-    _overclock_count: int = field(default=-1, init=False)
-    _heat_overclock_count: int = field(default=-1, init=False)
     _limits_overclocks: bool = field(default=False, init=False)
     _max_overclocks: int = field(default=0, init=False)
 
+    def enable_perfect_oc(self):
+        self.duration_decrease_per_oc = 4
+
+    def limit_overclock_counts(self, max_overclocks: int):
+        self._limits_overclocks = True
+        self._max_overclocks = max_overclocks
+
     def __post_init__(self, enables_perfect_oc, max_oc_count) -> None:
         if enables_perfect_oc:
-            self.duration_decrease_per_oc = 4
+            self.enable_perfect_oc()
         if max_oc_count >= 0:
-            self._limits_overclocks = True
-            self._max_overclocks = max_oc_count
-        self._validate()
-        self._calculate()
+            self.limit_overclock_counts(max_oc_count)
 
-    def _validate(self) -> None:
+    def validate(self) -> None:
+        """
+        Validates parameters for `calculate()`.
+        """
         if self.does_laser_oc and self.does_amperage_oc:
             raise ValueError(
                 "Tried to create an OverclockHandler "
@@ -105,76 +122,95 @@ class OverclockCalculator:
         if self.eut_increase_per_oc <= 0:
             raise ValueError("EUt increase can't be a negative number or zero")
 
-    def _calculate(self) -> None:
+    def calculate(self) -> OverclockCalculatorResult:
+        """
+        Does the calculation.
+
+        Call `validate()` before this to validate parameters.
+        """
         # Mirrors Java implementation of:
         # - calculate()
         # - calculateOverclock()
-        self.duration = math.ceil(self.duration * self.speed_boost)
+        # Some comments indicate which Java code is skipped
+
+        duration = math.ceil(self.duration * self.speed_boost)
+        recipe_voltage = self.recipe_voltage
+        # Removed from variable members
+        # since they are only used here locally
+        overclock_count = -1
+        heat_overclock_count = -1
 
         if self.does_not_overclock:
-            self.recipe_voltage = self._final_recipe_eut(
-                self._heat_discount_multiplier()
+            recipe_voltage = self._final_recipe_eut(
+                recipe_voltage, self._heat_discount_multiplier()
             )
-            return
+            return OverclockCalculatorResult(
+                duration=duration, recipe_voltage=recipe_voltage, overclock_count=0
+            )
 
         # "laserOC && amperageOC" check moved to __post_init__
 
         heat_discount_multiplier = self._heat_discount_multiplier()
         if self.does_heat_oc:
-            self._heat_overclock_count = self._amount_of_heat_overclocks()
+            heat_overclock_count = self._amount_of_heat_overclocks()
 
         recipe_power_tier = self._recipe_power_tier(heat_discount_multiplier)
         machine_power_tier = self._machine_power_tier()
 
-        self._overclock_count = self._amount_of_needed_overclocks(
+        overclock_count = self._amount_of_needed_overclocks(
             machine_power_tier, recipe_power_tier
         )
         if not self.does_amperage_oc:
-            self._overclock_count = min(
-                self._overclock_count, self._recipe_to_machine_voltage_diff()
+            overclock_count = min(
+                overclock_count, self._recipe_to_machine_voltage_diff()
             )
-        self._overclock_count = max(self._overclock_count, 0)
+        overclock_count = max(overclock_count, 0)
         if self._limits_overclocks:
-            self._overclock_count = min(self._max_overclocks, self._overclock_count)
+            overclock_count = min(self._max_overclocks, overclock_count)
 
-        self._heat_overclock_count = min(
-            self._heat_overclock_count, self._overclock_count
+        heat_overclock_count = min(heat_overclock_count, overclock_count)
+        recipe_voltage = math.floor(
+            recipe_voltage * math.pow(self.eut_increase_per_oc, overclock_count)
         )
-        self.recipe_voltage = math.floor(
-            self.recipe_voltage
-            * math.pow(self.eut_increase_per_oc, self._overclock_count)
-        )
-        self.duration = math.floor(
-            self.duration
+        duration = math.floor(
+            duration
             / math.pow(
                 self.duration_decrease_per_oc,
-                self._overclock_count - self._heat_overclock_count,
+                overclock_count - heat_overclock_count,
             )
         )
-        self.duration = math.floor(
-            self.duration
-            / math.pow(self.duration_decrease_per_heat_oc, self._heat_overclock_count)
+        duration = math.floor(
+            duration
+            / math.pow(self.duration_decrease_per_heat_oc, heat_overclock_count)
         )
         if self.has_one_tick_discount:
             self.recipe_voltage = math.floor(
                 self.recipe_voltage
                 / math.pow(
                     self.duration_decrease_per_oc,
-                    int(machine_power_tier - recipe_power_tier - self._overclock_count),
+                    int(machine_power_tier - recipe_power_tier - overclock_count),
                 )
             )
             if self.recipe_voltage < 1:
                 self.recipe_voltage = 1
 
         if self.does_laser_oc:
-            self._do_laser_oc()
+            duration, recipe_voltage = self._do_laser_oc(duration, recipe_voltage)
 
-        if self.duration < 1:
-            self.duration = 1
+        if duration < 1:
+            duration = 1
 
-        self.recipe_voltage = self._final_recipe_eut(heat_discount_multiplier)
+        recipe_voltage = self._final_recipe_eut(
+            recipe_voltage, heat_discount_multiplier
+        )
 
-    def duration_under_one_tick(self) -> float:
+        return OverclockCalculatorResult(
+            duration=duration,
+            recipe_voltage=recipe_voltage,
+            overclock_count=overclock_count,
+        )
+
+    def calculate_duration_under_one_tick(self) -> float:
         # TODO: support duration under one tick supplier
         if self.does_not_overclock:
             return float(self.duration)
@@ -190,7 +226,7 @@ class OverclockCalculator:
             * math.pow(self.duration_decrease_per_heat_oc, heat_overclocks)
         )
 
-    def get_eut_consumption_under_one_tick(
+    def calculate_eut_consumption_under_one_tick(
         self, original_max_parallel: int, current_parallel: int
     ) -> int:
         if self.does_not_overclock:
@@ -241,7 +277,7 @@ class OverclockCalculator:
         if self.has_heat_discount:
             heat_discounts = (
                 self.machine_heat - self.recipe_heat
-            ) / self.HEAT_DISCOUNT_THRESHOLD
+            ) // self.HEAT_DISCOUNT_THRESHOLD
         return math.pow(self.heat_discount_multi, heat_discounts)
 
     @staticmethod
@@ -286,27 +322,28 @@ class OverclockCalculator:
             self._power_tier(self.recipe_voltage)
         )
 
-    def _do_laser_oc(self) -> None:
+    def _do_laser_oc(self, duration: int, recipe_voltage: int):
+        res_duration = duration
+        res_recipe_voltage = recipe_voltage
         input_eut = self.machine_voltage * self.machine_amperage
         current_penalty = self.eut_increase_per_oc + self.laser_oc_penalty
         while (
-            input_eut > self.recipe_voltage * current_penalty
-            and self.recipe_voltage * current_penalty > 0
-            and self.duration > 1
+            input_eut > res_recipe_voltage * current_penalty
+            and res_recipe_voltage * current_penalty > 0
+            and res_duration > 1
         ):
-            self.duration //= self.duration_decrease_per_oc
-            self.recipe_voltage = int(self.recipe_voltage * current_penalty)
+            res_duration //= self.duration_decrease_per_oc
+            res_recipe_voltage = int(res_recipe_voltage * current_penalty)
             current_penalty += self.laser_oc_penalty
+        return res_duration, res_recipe_voltage
 
-    def _final_recipe_eut(self, heat_discount_multiplier: float):
-        return int(
-            math.ceil(
-                self.recipe_voltage
-                * self.eut_discount
-                * heat_discount_multiplier
-                * self.parallel
-                * self.recipe_amperage
-            )
+    def _final_recipe_eut(self, recipe_voltage: int, heat_discount_multiplier: float):
+        return math.ceil(
+            recipe_voltage
+            * self.eut_discount
+            * heat_discount_multiplier
+            * self.parallel
+            * self.recipe_amperage
         )
 
     @staticmethod
