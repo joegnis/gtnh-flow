@@ -4,32 +4,38 @@ import pytest
 
 from src.gtnh.overclock_calculator import OverclockCalculator
 from src.gtnh.parallel_helper import ParallelHelper
-from src.gtnh.values import Voltage
+from src.gtnh.values import VoltageTier
 
 
 @pytest.mark.parametrize(
     "machine_voltage,machine_heat,expected_eut,expected_dur,expected_parallel",
     [
         # No Overclocks (800K over recipe - no bonuses)
-        (Voltage.MV, 1801, math.ceil(120 * 0.9), math.ceil(25 * 20 / 2.2), 1),
+        (VoltageTier.MV, 1801, math.ceil(120 * 0.9), math.ceil(25 * 20 / 2.2), 1),
         # No Overclocks (1700K over recipe - one 5% heat bonus)
-        (Voltage.MV, 2701, math.ceil(120 * 0.9 * 0.95), math.ceil(25 * 20 / 2.2), 1),
+        (
+            VoltageTier.MV,
+            2701,
+            math.ceil(120 * 0.9 * 0.95),
+            math.ceil(25 * 20 / 2.2),
+            1,
+        ),
         # 4x voltage for volcanus is 4x parallels
-        (Voltage.HV, 1801, math.ceil(120 * 4 * 0.9), math.ceil(25 * 20 / 2.2), 4),
+        (VoltageTier.HV, 1801, math.ceil(120 * 4 * 0.9), math.ceil(25 * 20 / 2.2), 4),
         # EBF heat bonuses are applied after parallels are calculated
         # (so still only 4 parallels)
         (
-            Voltage.HV,
+            VoltageTier.HV,
             5401,
             math.ceil(120 * 4 * 0.9 * 0.95**4),
             math.ceil(25 * 20 / 2.2),
             4,
         ),
         # EV is enough for 16x parallels but capped to 8x. Not enough for overclock.
-        (Voltage.EV, 1801, math.ceil(120 * 8 * 0.9), math.ceil(25 * 20 / 2.2), 8),
+        (VoltageTier.EV, 1801, math.ceil(120 * 8 * 0.9), math.ceil(25 * 20 / 2.2), 8),
         # IV is enough for 8 parallels and 1 normal overclock.
         (
-            Voltage.IV,
+            VoltageTier.IV,
             1801,
             math.ceil(120 * 8 * 4 * 0.9),
             math.ceil(25 * 20 / 2.2 / 2),
@@ -37,7 +43,7 @@ from src.gtnh.values import Voltage
         ),
         # 8 Parallel, 1 perfect oc (two 5% heat eut bonuses)
         (
-            Voltage.IV,
+            VoltageTier.IV,
             3601,
             math.ceil(120 * 8 * 4 * 0.9 * 0.95**2),
             math.ceil(25 * 20 / 2.2 / 4),
@@ -45,7 +51,7 @@ from src.gtnh.values import Voltage
         ),
         # 8 Parallel, 1 perfect oc, 1 normal oc (two 5% heat eut bonuses)
         (
-            Voltage.LuV,
+            VoltageTier.LUV,
             3601,
             math.ceil(120 * 8 * 4 * 4 * 0.9 * 0.95**2),
             math.floor(25 * 20 / 2.2 / 4 / 2),  # in game data

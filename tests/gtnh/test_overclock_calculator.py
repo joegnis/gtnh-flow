@@ -3,7 +3,7 @@ import math
 import pytest
 
 from src.gtnh.overclock_calculator import OverclockCalculator
-from src.gtnh.values import Voltage
+from src.gtnh.values import VoltageTier
 
 
 @pytest.mark.parametrize(
@@ -15,43 +15,43 @@ from src.gtnh.values import Voltage
     [
         # perfect OC: at recipe heat requirement + 1800 * 4
         (
-            Voltage.LV.practical(),
+            VoltageTier.LV.practical(),
             1024,
             1800,
-            Voltage.IV,
+            VoltageTier.IV,
             1800 * 5,
             1024 >> 8,
-            math.ceil(Voltage.IV.practical() * math.pow(0.95, (1800 * 4) / 900)),
+            math.ceil(VoltageTier.IV.practical() * math.pow(0.95, (1800 * 4) / 900)),
         ),
         # imperfect OC: at recipe heat requirement + 900
         (
-            Voltage.LV.practical(),
+            VoltageTier.LV.practical(),
             1024,
             1800,
-            Voltage.IV,
+            VoltageTier.IV,
             2700,
             1024 >> 4,
-            math.ceil(Voltage.IV.practical() * math.pow(0.95, 1)),
+            math.ceil(VoltageTier.IV.practical() * math.pow(0.95, 1)),
         ),
         # imperfect OC: only at recipe heat requirement
         (
-            Voltage.LV.practical(),
+            VoltageTier.LV.practical(),
             1024,
             1800,
-            Voltage.IV,
+            VoltageTier.IV,
             1800,
             1024 >> 4,
-            math.ceil(Voltage.IV.practical() * math.pow(0.95, 0)),
+            math.ceil(VoltageTier.IV.practical() * math.pow(0.95, 0)),
         ),
         # perfect OC: at recipe heat requirement + 1800
         (
-            Voltage.LV.practical(),
+            VoltageTier.LV.practical(),
             1024,
             1800,
-            Voltage.IV,
+            VoltageTier.IV,
             3600,
             1024 >> 5,
-            math.ceil(Voltage.IV.practical() * math.pow(0.95, 2)),
+            math.ceil(VoltageTier.IV.practical() * math.pow(0.95, 2)),
         ),
     ],
 )
