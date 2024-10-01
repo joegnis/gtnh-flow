@@ -27,6 +27,10 @@ class VoltageTier(IntEnum, metaclass=VoltageTierMeta):
     >>> VoltageTier.IV * 2
     16384
 
+    Getting a tier's number:
+    >>> VoltageTier.ZPM.number()
+    7
+
     Getting a tier by its name:
     >>> VoltageTier["max+"]
     <VoltageTier.MAX_PLUS: 8589934592>
@@ -61,6 +65,9 @@ class VoltageTier(IntEnum, metaclass=VoltageTierMeta):
 
     def practical(self):
         return int(self * 30 / 32)
+
+    def number(self) -> int:
+        return int((math.log(self, 2) - 3) / 2)
 
     @classmethod
     def _missing_(cls, value):

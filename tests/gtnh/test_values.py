@@ -58,3 +58,15 @@ def test_voltage_tier_get_voltage_tier(voltage, expected_tier):
 def test_voltage_tier_get_voltage_tier_errors(voltage, expected_error):
     with pytest.raises(expected_error):
         VoltageTier(voltage)
+
+
+@pytest.mark.parametrize(
+    "voltage,expected_num",
+    [
+        (VoltageTier.ULV, 0),
+        (VoltageTier.MAX_PLUS, 15),
+        (VoltageTier.EV, 4),
+    ],
+)
+def test_voltage_tier_to_number(voltage, expected_num):
+    assert expected_num == voltage.number()
