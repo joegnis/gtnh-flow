@@ -1,6 +1,7 @@
 import math
 
 import pytest
+from pytest_check import check
 
 from src.gtnh.overclock_calculator import OverclockCalculator
 from src.gtnh.values import VoltageTier
@@ -76,5 +77,5 @@ def test_calculate_EBF(
     calculator.validate()
     res = calculator.calculate()
 
-    assert res.duration == expected_dur
-    assert res.recipe_voltage == expected_eut
+    check.equal(expected_dur, res.duration)
+    check.equal(expected_eut, res.recipe_voltage)

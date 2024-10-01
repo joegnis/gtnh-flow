@@ -1,12 +1,14 @@
 import math
 
 import pytest
+from pytest_check import check
 
 from src.gtnh.overclock_calculator import OverclockCalculator
 from src.gtnh.parallel_helper import ParallelHelper
 from src.gtnh.values import VoltageTier
 
 
+# Credit to: @Hermanoid, https://github.com/OrderedSet86/gtnh-flow/pull/39
 @pytest.mark.parametrize(
     "machine_voltage,machine_heat,expected_eut,expected_dur,expected_parallel",
     [
@@ -59,7 +61,7 @@ from src.gtnh.values import VoltageTier
         ),
     ],
 )
-def test_build_volcanus_ebf_iron_dust_recipe(
+def test_volcanus_ebf_iron_dust_recipe(
     machine_voltage, machine_heat, expected_eut, expected_dur, expected_parallel
 ):
     calculator = OverclockCalculator(
@@ -80,6 +82,40 @@ def test_build_volcanus_ebf_iron_dust_recipe(
     eut = res_helper.recipe_voltage
     parallel = res_helper.parallel
 
-    assert eut == expected_eut
-    assert dur == expected_dur
-    assert parallel == expected_parallel
+    check.equal(eut, expected_eut)
+    check.equal(dur, expected_dur)
+    check.equal(parallel, expected_parallel)
+
+
+@pytest.mark.parametrize(
+    "machine_voltage,expected_eut,expected_dur,expected_parallel",
+    [
+        (VoltageTier.HV, 162, 178, 18),
+        (VoltageTier.EV, 864, 89, 24),
+        (VoltageTier.UEV, 2_211_840, 2, 60),
+        (VoltageTier.UIV, 9_732_096, 1, 66),
+        (VoltageTier.UMV, 42_467_328, 1, 103),
+    ],
+)
+def test_industrial_centrifuge_black_granite_recipe(
+    machine_voltage, expected_eut, expected_dur, expected_parallel
+):
+    calculator = OverclockCalculator(
+        10,
+        20 * 20,
+        machine_voltage,
+        eut_discount=0.9,
+        speed_boost=1 / 2.25,
+    )
+    helper = ParallelHelper(
+        calculator,
+        eut_modifier=0.9,
+        max_parallel=6 * VoltageTier(machine_voltage).number(),
+    )
+    res_helper = helper.build()
+    res_calc = res_helper.calculator_result
+    dur = int(res_helper.duration_multiplier * res_calc.duration)
+
+    check.equal(expected_eut, res_helper.recipe_voltage)
+    check.equal(expected_dur, dur)
+    check.equal(expected_parallel, res_helper.parallel)
