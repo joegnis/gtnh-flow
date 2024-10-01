@@ -87,11 +87,16 @@ class OverclockCalculator:
     # Removed from members (see calculate())
     # _overclock_count
     # Removed from members (see calculate())
-    # _heat_overclock_count
+
+    # The following variables are removed from members
+    # as they are only used locally
+    # heat_overclock_count
+    # overclock_count
 
     # Private variables
     _limits_overclocks: bool = field(default=False, init=False)
     _max_overclocks: int = field(default=0, init=False)
+    # _overclock_count
 
     def enable_perfect_oc(self):
         self.duration_decrease_per_oc = 4
@@ -135,10 +140,7 @@ class OverclockCalculator:
 
         duration = math.ceil(self.duration * self.speed_boost)
         recipe_voltage = self.recipe_voltage
-        # Removed from variable members
-        # since they are only used here locally
-        overclock_count = -1
-        heat_overclock_count = -1
+        heat_overclock_count = 0
 
         if self.does_not_overclock:
             recipe_voltage = self._final_recipe_eut(
@@ -250,7 +252,7 @@ class OverclockCalculator:
         machine_tier = self._machine_power_tier()
         recipe_tier = self._recipe_power_tier(heat_discount_multiplier)
         amount_total_oc = self._amount_of_overclocks(machine_tier, recipe_tier)
-        if self.recipe_voltage <= values.V[0]:
+        if self.recipe_voltage <= values.VoltageTier[0]:
             amount_total_oc = min(
                 amount_total_oc, self._recipe_to_machine_voltage_diff()
             )

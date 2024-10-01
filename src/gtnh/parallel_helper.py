@@ -119,10 +119,9 @@ class ParallelHelper:
         # final ItemStack[] truncatedItemOutputs = recipe.mOutputs != null
         # final FluidStack[] truncatedFluidOutputs = ...
 
-        # SingleRecipeCheck recipeCheck = null;
-        # ...
+        # We don't have recipe check so it is skipped
 
-        # if (protectExcessItem || protectExcessFluid)
+        # We don't have void protection so it is skipped
 
         actual_max_parallel = max_parallel_before_batch_mode
         if self._actual_recipe_eut > 0:
