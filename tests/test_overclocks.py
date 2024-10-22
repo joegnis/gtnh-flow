@@ -9,7 +9,7 @@ from src.data.basicTypes import Recipe
 from src.gtnh.overclocks import OverclockHandler
 
 
-def mod_recipe(recipe, **kwargs):
+def mod_recipe(recipe: Recipe, **kwargs):
     modded = deepcopy(recipe)
     for k, v in kwargs.items():
         setattr(modded, k, v)
@@ -18,9 +18,7 @@ def mod_recipe(recipe, **kwargs):
 
 @pytest.fixture
 def overclock_handler():
-    # for now it uses config file in the project
-    # it may cause issue if config file is messed up
-    return OverclockHandler(ProgramContext())
+    return OverclockHandler(ProgramContext('tests/sanity_config.yaml'))
 
 
 recipe_sb_centrifuge = Recipe(
@@ -40,7 +38,12 @@ recipe_sb_centrifuge = Recipe(
         (mod_recipe(recipe_sb_centrifuge, user_voltage="hv"), 80, 20),
     ],
 )
-def test_standardOverclock(recipe, expected_eut, expected_dur, overclock_handler):
+def test_standardOverclock(
+        recipe: Recipe,
+        expected_eut: float,
+        expected_dur: float,
+        overclock_handler: OverclockHandler,
+    ) -> None:
     overclocked = overclock_handler.overclockRecipe(recipe)
     assert overclocked.eut == expected_eut
     assert overclocked.dur == expected_dur
@@ -63,7 +66,12 @@ recipe_lcr = Recipe(
         (mod_recipe(recipe_lcr, user_voltage="hv"), 80, 5),
     ],
 )
-def test_perfectOverclock(recipe, expected_eut, expected_dur, overclock_handler):
+def test_perfectOverclock(
+        recipe: Recipe,
+        expected_eut: float,
+        expected_dur: float,
+        overclock_handler: OverclockHandler,
+    ) -> None:
     overclocked = overclock_handler.overclockRecipe(recipe)
     assert overclocked.eut == expected_eut
     assert overclocked.dur == expected_dur
@@ -111,10 +119,114 @@ recipe_ebf = Recipe(
         ),
     ],
 )
-def test_EBFOverclock(recipe, expected_eut, expected_dur, overclock_handler):
+def test_EBFOverclock(
+        recipe: Recipe,
+        expected_eut: float,
+        expected_dur: float,
+        overclock_handler: OverclockHandler,
+    ) -> None:
     overclocked = overclock_handler.overclockRecipe(recipe)
     assert overclocked.eut == expected_eut
     assert overclocked.dur == expected_dur
+    
+
+recipe_volcanus = mod_recipe(recipe_ebf, machine="volcanus")
+recipe_samarium = Recipe(
+    "volcanus",
+    "ev",
+    IngCol(
+        Ing("Dephosphated Samarium Concentrate Dust", 1),
+    ),
+    IngCol(
+        Ing("Samarium Oxide Dust", 1),
+        Ing("Gangue Dust", 1),
+    ),
+    514,
+    2,
+    coils="HSS-G",
+    heat=1200,
+)
+
+# Based on in-game measurements
+@pytest.mark.parametrize(
+    "recipe,expected_eut,expected_dur,expected_parallel",
+    [
+        (
+        # No Overclocks (800K over recipe - no bonuses)
+            mod_recipe(recipe_volcanus, user_voltage="mv", coils="cupronickel"),  # 1801K    
+            120 * 0.9,
+            25 / 2.2,
+            1,
+        ),
+        (
+        # No Overclocks (1700K over recipe - one 5% heat bonus)
+            mod_recipe(recipe_volcanus, user_voltage="mv", coils="kanthal"),  # 2701K    
+            120 * 0.9 * 0.95,
+            25 / 2.2,
+            1,
+        ),
+        # 4x voltage for volcanus is 4x parallels
+        (
+            mod_recipe(recipe_volcanus, user_voltage="hv", coils="cupronickel"),  # 1801K    
+            120 * 4 * 0.9,
+            25 / 2.2,
+            4,
+        ),
+        # EBF heat bonuses are applied after parallels are calculated (so still only 4 parallels)
+        (
+            mod_recipe(recipe_volcanus, user_voltage="hv", coils="hss-g"),  # 5401K
+            120 * 4 * 0.9 * 0.95**4,
+            25 / 2.2,
+            4
+        ),
+        # EV is enough for 16x parallels but capped to 8x. Not enough for overclock.
+        (
+            mod_recipe(recipe_volcanus, user_voltage="ev", coils="cupronickel"),  # 1801K
+            120 * 8 * 0.9,
+            25 / 2.2,
+            8,
+        ),
+        # IV is enough for 8 parallels and 1 normal overclock.
+        (
+            mod_recipe(recipe_volcanus, user_voltage="iv", coils="cupronickel"),  # 1801K
+            120 * 8 * 4 * 0.9,
+            25 / 2.2 / 2,
+            8,
+        ),
+        # 8 Parallel, 1 perfect oc (two 5% heat eut bonuses)
+        (
+            mod_recipe(recipe_volcanus, user_voltage="iv", coils="nichrome"),  # 3601K
+            120 * 8 * 4 * 0.9 * 0.95**2,
+            25 / 2.2 / 4,
+            8,
+        ),
+        # 8 Parallel, 1 perfect oc, 1 normal oc (two 5% heat eut bonuses)
+        (
+            mod_recipe(recipe_volcanus, user_voltage="luv", coils="nichrome"),  # 3601K
+            120 * 8 * 4 * 4 * 0.9 * 0.95**2,
+            25 / 2.2 / 4 / 2,
+            8,
+        ),
+        # Recipe shows gtpp eut discount applied before parallels (would be 3 parallels otherwise)
+        (
+            recipe_samarium,  # 3601K
+            514 * 4 * 0.9 * 0.95**4,
+            2 / 2.2,
+            4,
+        ),
+    ],
+)
+def test_volcanusOverclock(
+        recipe: Recipe,
+        expected_eut: float,
+        expected_dur: float,
+        expected_parallel: int,
+        overclock_handler: OverclockHandler,
+    ) -> None:
+    overclocked = overclock_handler.overclockRecipe(recipe)
+    assert overclocked.eut == expected_eut
+    assert overclocked.dur == expected_dur
+    assert overclocked.parallel == expected_parallel
 
 
 recipe_pyrolyse_oven = Recipe(
@@ -152,7 +264,12 @@ recipe_pyrolyse_oven = Recipe(
         ),
     ],
 )
-def test_pyrolyseOverclock(recipe, expected_eut, expected_dur, overclock_handler):
+def test_pyrolyseOverclock(
+        recipe: Recipe,
+        expected_eut: float,
+        expected_dur: float,
+        overclock_handler: OverclockHandler,
+    ) -> None:
     overclocked = overclock_handler.overclockRecipe(recipe)
     assert overclocked.eut == expected_eut
-    assert overclocked.dur == expected_dur
+    assert overclocked.dur == expected_dur  

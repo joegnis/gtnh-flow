@@ -1,5 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
+from typing import Iterable, Union
 
 
 @dataclass
@@ -9,19 +10,19 @@ class Ingredient:
 
 
 class IngredientCollection:
-    def __init__(self, *ingredient_list):
+    def __init__(self, *ingredient_list: list[Ingredient]) -> None:
         self._ings = list(ingredient_list)
         # Note: name is not a unique identifier for multi-input situations
         # therefore, need to defaultdict a list
         self._ingdict = defaultdict(list)
         for ing in self._ings:
             self._ingdict[ing.name].append(ing.quant)
-        # self._ingdict = {x.name: x.quant for x in self._ings}
 
-    def __iter__(self):
+    def __iter__(self) -> Iterable[Ingredient]:
         return iter(self._ings)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: Union[int, str]) -> Union[Ingredient, list[float]]:
+        # int goes to self._ings, str goes to self._ingdict
         if isinstance(idx, int):
             return self._ings[idx]
         elif isinstance(idx, str):
@@ -29,10 +30,11 @@ class IngredientCollection:
         else:
             raise RuntimeError(f'Improper access to {self} using {idx}')
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str([x for x in self._ings])
 
-    def __mul__(self, mul_num):
+    def __mul__(self, mul_num: Union[float, int]) -> 'IngredientCollection':
+        assert isinstance(mul_num, (int, float))
         for ing in self._ings:
             ing.quant *= mul_num
         self._ingdict = defaultdict(list)
@@ -42,30 +44,45 @@ class IngredientCollection:
 
         return self
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._ings)
 
-    def addItem(self, item: Ingredient):
+    def addItem(self, item: Ingredient) -> None:
         self._ings.append(item)
         self._ingdict[item.name].append(item.quant)
 
-    def __add__(self, other: 'IngredientCollection'):
+    def __add__(self, other: 'IngredientCollection') -> 'IngredientCollection':
         for ing in other:
             self.addItem(ing)
         return self
+
+    def itemAmount(self, name: str) -> int:
+        return sum(self._ingdict.get(name, []))
+
+    def __contains__(self, item) -> bool:
+        if isinstance(item, str):
+            # Checks if an ingredient with the name exists
+            return item in self._ingdict and len(self._ingdict[item]) > 0
+        elif isinstance(item, Ingredient):
+            # If this collection has the ingredient and
+            # has more quantity than the ingredient has,
+            # return true
+            quant = item.quant
+            return quant > 0 and quant <= self.itemAmount(item.name)
+        return False
 
 
 class Recipe:
     def __init__(
             self,
-            machine_name,
-            user_voltage,
-            inputs,
-            outputs,
-            eut,
-            dur,
+            machine_name: str,
+            user_voltage: str,
+            inputs: IngredientCollection,
+            outputs: IngredientCollection,
+            eut: float,
+            dur: float, # With new subtick this is tracked as float
             **kwargs
-        ):
+        ) -> None:
         self.machine = machine_name
         self.user_voltage = user_voltage
         self.I = inputs
@@ -81,10 +98,10 @@ class Recipe:
                 value = value.lower()
             setattr(self, key, value)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str([f'{x}={getattr(self, x)}' for x in vars(self)])
 
-    def __mul__(self, mul_num):
+    def __mul__(self, mul_num: Union[int, float]) -> 'Recipe':
         assert isinstance(mul_num, (int, float))
         assert self.multiplier == -1 # Undefined behavior with multiple multiplications
 
@@ -95,6 +112,9 @@ class Recipe:
 
         return self
 
+
+EdgeIndexType = tuple[str, str, str] # (node_from, node_to, ing_name)
+# EdgeDataType = dict[] # TODO: Make nicer type for this
 
 
 if __name__ == '__main__':

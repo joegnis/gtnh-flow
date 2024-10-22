@@ -1,18 +1,20 @@
 import itertools
-from typing import Set
+from typing import Any, Set
 
 from termcolor import colored
 
+from src.data.basicTypes import Recipe
 from src.gtnh.overclocks import OverclockHandler
 
 
 class IdentityGroup:
-    def __init__(self, ground_truth_machine: str, aliases: Set[str]):
+    def __init__(self, ground_truth_machine: str, aliases: Set[str]) -> None:
         self.gtm = ground_truth_machine
         self.aliases = aliases
-    def isCanonical(self, machine_name):
+
+    def isCanonical(self, machine_name: str) -> bool:
         return machine_name == self.gtm
-    def isAlias(self, machine_name):
+    def isAlias(self, machine_name: str) -> bool:
         return machine_name in self.aliases
 
 
@@ -21,7 +23,7 @@ machine_identity_groups = [
 
     ['pyrolyse oven', {'pyro oven'}],
     ['large chemical reactor', {'lcr'}],
-    ['electric blast furnace', {'ebf'}],
+    ['electric blast furnace', {'ebf', 'blast furnace'}],
     ['multi smelter', {'smelter'}],
     ['circuit assembly line', {'cal'}],
     ['fusion reactor', {'fusion'}],
@@ -41,26 +43,26 @@ machine_identity_groups = [
     ['industrial electrolyzer', {'electrolyzer++'}],
     ['maceration stack', {'macerator++'}],
     ['wire factory', {'wiremill++'}],
-    ['industrial mixing machine', {'mixer++'}],
+    ['industrial mixing machine', {'mixer++', 'industrial mixer'}],
     ['industrial sifter', {'sifter++', 'large sifter'}],
-    ['large therminal refinery', {'thermal refinery++'}],
+    ['large thermal refinery', {'thermal refinery++', 'industrial thermal centrifuge'}],
     ['industrial wash plant', {'washplant++', 'industrial washing plant', 'ore washer++', 'ore washing plant', 'owp++'}],
     ['industrial extrusion machine', {'extruder++'}],
     ['large processing factory', {'lpf'}],
-    ['industrial arc furnace', {'arc furnace++'}],
+    ['industrial arc furnace', {'arc furnace++', 'high current industrial arc furnace'}],
     ['large scale auto-assembler', {'lsaa', 'assembler++'}],
     ['cutting factory', {'cutting factory controller'}],
-    ['boldarnator', {'rock breaker++'}],
+    ['boldarnator', {'rock breaker++', 'industrial rock breaker'}],
     ['dangote - distillery', {'distillery++'}],
     ['thermic heating device', {'thermic heater', 'heater++', 'industrial fluid heater'}],
     ['volcanus', {'volc', 'ebf++'}],
     ['dangote - distillation tower', {'dt++', 'dangote'}],
     ['industrial coke oven', {'ico'}],
-    ['chem plant', {'chemical plant', 'exxonmobil', 'exxonmobil chemical plant'}],
+    ['chemical plant', {'chem plant', 'exxonmobil', 'exxonmobil chemical plant'}],
     ['zhuhai', set()],
     ['tree growth simulator', {'tgs'}],
-    ['industrial dehydrator', {'utupu', 'utupu-tanuri', 'dehydrator++'}],
-    ['floation cell regulator', {'floatation cell'}],
+    ['industrial dehydrator', {'utupu', 'utupu-tanuri', 'utupu tanuri', 'dehydrator++'}],
+    ['flotation cell regulator', {'flotation cell'}],
     ['isamill grinding machine', {'isamill'}],
 ]
 machine_identity_groups = [IdentityGroup(name, aliases) for name, aliases in machine_identity_groups]
@@ -69,7 +71,13 @@ machine_identity_groups = [IdentityGroup(name, aliases) for name, aliases in mac
 class Graph:
 
 
-    def __init__(self, graph_name, recipes, parent_context, graph_config=None):
+    def __init__(
+            self,
+            graph_name: str,
+            recipes: list[Recipe],
+            parent_context, # TODO: figure out how to type this (ProgramContext)
+            graph_config: dict[str, Any] = None,
+        ) -> None:
         self.graph_name = graph_name
         self.recipes = {str(i): x for i, x in enumerate(recipes)}
         self.nodes = {}
