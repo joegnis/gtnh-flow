@@ -16,34 +16,45 @@ class OverclockCalculatorResult:
 class OverclockCalculator:
     """
     Calculates overclocking of a recipe.
+
+    Instantiate this class with proper arguments,
+    and call `calculate()` to get results.
+    After that, if we want to change calculation parameters,
+    modify public members (those without leading `_`),
+    call public method, and etc,
+    verify the changes by calling `validate()`,
+    and finally call `calculate()` again.
+
+    Different from Java code, instantiation is not done by
+    calling various setters and then calling `calculate()`.
+    Instead, all init arguments are passed into constructor.
+    As special cases,
+    some setters in Java modify more than one member variables:
+    1. `enablePerfectOC()`.
+        Use boolean constructor argument `enables_perfect_oc` or
+        call method `enable_perfect_oc()`
+    2. `limitOverclockCount()`.
+        Use int constructor argument `limitOverclockCount` or
+        call method `limit_overclock_counts()`
+
+    Also different from Java code,
+    calculation results are not stored by changing inner states.
+    Results are in return value instead.
+    The major benefit is that it makes it easier
+    to figure out what the code is doing.
+
+    A rewrite of the following class in GT5-Unofficial repo:
+    - gregtech/api/util/GT_OverclockCalculator.java
+    - GTNH version: 2.6.1
+    - GT5-Unofficial version: 5.09.45.168
+    - GT5-Unofficial commit: 9ec067dc13f9ef7aff30fcc0ee3244f22bd76dd7
     """
 
-    # Mirror the following class in Java source code:
-    # - Source: gregtech/api/util/GT_OverclockCalculator.java
-    # - GTNH version: 2.6.1
-    # - GT5-Unofficial version: 5.09.45.168
-    # - GT5-Unofficial commit: 9ec067dc13f9ef7aff30fcc0ee3244f22bd76dd7
     # Only code changed from source is documented.
     # Refer to Java code for more documentation.
 
-    # joegnis:
-    # I am trying not to store calculate() results by setting member variables
-    # as Java code does.
-    # Instead, results are returned, and
-    # no inner states would be changed during the process.
-    # The major benefit is that code would be easier to read.
-    # Returning a result makes it clear what it is doing.
-    #
-    # In Java code, multiple setter methods are called after instantiation,
-    # and then calculate() is called.
-    # These setter methods only set one variable,
-    # so I simplify it by making those variables "public" and
-    # use `@dataclass` decorator to auto generate an __init__ method.
-    # For other setter variants, like `limitOverclockCount()`,
-    # that modify more than one member variables,
-    # I assign one init-only variable to each of them, and
-    # do the init process in `__post_init__`.
-
+    # `@dataclass` decorator helps generate an `__init__` method
+    # automatically from member variable declaration.
     # Private Java methods are prefixed with an underscore in Python.
     # Most of Java methods "calculateX" are shortened to "X" in Python.
     HEAT_DISCOUNT_THRESHOLD: ClassVar[int] = 900
@@ -110,6 +121,7 @@ class OverclockCalculator:
             self.enable_perfect_oc()
         if max_oc_count >= 0:
             self.limit_overclock_counts(max_oc_count)
+        self.validate()
 
     def validate(self) -> None:
         """
@@ -131,11 +143,12 @@ class OverclockCalculator:
         """
         Does the calculation.
 
-        Call `validate()` before this to validate parameters.
+        Call `validate()` before this to verify parameters.
+
+        Equivalent to the methods in Java:
+        - calculate()
+        - calculateOverclock()
         """
-        # Mirrors Java implementation of:
-        # - calculate()
-        # - calculateOverclock()
         # Some comments indicate which Java code is skipped
 
         duration = math.ceil(self.duration * self.speed_boost)
